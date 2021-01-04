@@ -10,10 +10,10 @@ void captureEvent(Capture video) {
 }
  
 void setup() {  
-  size(320, 240);
+  size(640, 480);
  
   // Step 3. Initialize Capture object.
-  video = new Capture(this, 320, 240);
+  video = new Capture(this, 640, 480);
  
   // Step 4. Start the capturing process.
   video.start();
