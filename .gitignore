@@ -1,3 +1,9 @@
+# BIN
+**/**/application.*
+**/**/**/application.*
+application.*
+**/application.*
+
 # Logs
 logs
 *.log
