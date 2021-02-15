@@ -138,5 +138,6 @@ void sendFeatures(String[] s) {
     featureString = sb.toString();
   } catch (Exception ex) {
      println("Encountered exception parsing string: " + ex); 
+     println("------------------------------------------------");
   }
 }
