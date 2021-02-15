@@ -50,9 +50,7 @@ void setup() {
      ;
   defaultColor = cp5.getColor();
      
-  //Set up OSC:
-  oscP5 = new OscP5(this,9000); //This port isn't important (we're not receiving OSC)
-  dest = new NetAddress(giaHost,giaPort); //Send to port 6448
+     
 }
 
 //Called when new port (n-th) selected in drop-down
@@ -109,24 +107,7 @@ void getData() {
         reading from multiple inputs in Arduino. Below is example code for an Arduino sketch
     */
     
-      String[] a = split(serial, ',');  //a new array (called 'a') that stores values into separate cells (separated by commas specified in your Arduino program)
-      numFeatures = a.length;
-      sendFeatures(a);
-  }
-}
-//String wekInputs = 
-void sendFeatures(String[] s) {
-  OscMessage msg = new OscMessage("/wek/inputs");
-  StringBuilder sb = new StringBuilder();
-  try {
-    for (int i = 0; i < s.length; i++) {
-      float f = Float.parseFloat(s[i]); 
-      msg.add(f);
-      sb.append(String.format("%.2f", f)).append(" ");
-    }
-    oscP5.send(msg, dest);
-    featureString = sb.toString();
-  } catch (Exception ex) {
-     println("Encountered exception parsing string: " + ex); 
+    text("Seria Data: " + serial, 20,120);     
+     
   }
 }
