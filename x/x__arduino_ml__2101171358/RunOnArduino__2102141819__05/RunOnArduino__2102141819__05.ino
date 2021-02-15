@@ -17,14 +17,35 @@ int trigPin = 6; //attach pin D3 Arduino to pin Trig of HC-SR04
 long duration; // variable for the duration of sound wave travel
 int distance; // variable for the distance measurement
 
+
+// -------------------------------------
+// ---  These might be part of an interface as they might be parametrizable
+int cycleDelay = 111;
+int maxDist = 50; // max range of expressiveness
+int minDist = 5;// Min range of expressiveness
+int curWeight = 3; //The weight of the current value in the equalization
+// -------------------------------------
+
+
+
 //maxRange
-  int maxDist = 50; // max range of expressiveness
   int maxDistFlag = -1;  // max range of expressiveness value we send through the output
 //minRange
-  int minDist = 5;// Min range of expressiveness
   int minDistFlag = 0; // Min range of expressiveness we send as output
 
   
+
+int p = -1;
+int Value1 = 0;
+int Value2 = 0;
+int Value3 = 0;
+
+//store previous value
+
+int pValue1 = 0; 
+int pValue2 = 0;
+int pValue3 = 0;
+
 
 void setup() {
   Serial.begin(9600); //Begin Serial Communication with a baud rate of 9600
@@ -35,13 +56,12 @@ void setup() {
 
 }
 
-  int p = -1;
-  
+
 void loop() {
    //New variables are declared to store the readings of the respective pins
-  int Value1 = analogRead(AnalogPin0);
-  int Value2 = analogRead(AnalogPin1);
-  int Value3 = analogRead(AnalogPin2);
+  Value1 = analogRead(AnalogPin0);
+  Value2 = analogRead(AnalogPin1);
+  Value3 = analogRead(AnalogPin2);
   
   
   //Integrate measurements ------------
@@ -67,7 +87,8 @@ void loop() {
   /*The Serial.print() function does not execute a "return" or a space
       Also, the "," character is essential for parsing the values,
       The comma is not necessary after the last variable.*/
-  
+equalizeValues();
+
   Serial.print(Value1, DEC); 
   Serial.print(",");
   Serial.print(Value2, DEC); 
@@ -76,5 +97,28 @@ void loop() {
   Serial.print(",");
   Serial.print(distance, DEC); 
   Serial.println();
-  delay(111); // For illustration purposes only. This will slow down your program if not removed 
+  delay(cycleDelay); // For illustration purposes only. This will slow down your program if not removed 
+//Keep track of previous value so we can equalize them with current (smooting the curve a bit)
+
+  pValue1= Value1;
+  pValue2 = Value2;
+  pValue3 = Value3;
+  
+}
+
+void equalizeValues() {
+  //int cur = Value1;
+  //int pCur = pValue1;
+  //Value1 = (((cur + pCur) / 2) + cur )/ 2 );
+  Value1 = eqOne(Value1,pValue1);
+  Value2 = eqOne(Value2,pValue2);
+  Value3 = eqOne(Value3,pValue3);
+  
+}
+
+int eqOne(int cur,int pCur)
+{
+  int r = ((cur * curWeight-1 ) + pCur ) / curWeight;
+             
+  return r;
 }
