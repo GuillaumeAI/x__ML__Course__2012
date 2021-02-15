@@ -20,16 +20,16 @@ int distance; // variable for the distance measurement
 
 // -------------------------------------
 // ---  These might be part of an interface as they might be parametrizable
-int cycleDelay = 11;
-int maxDist = 50; // max range of expressiveness
-int minDist = 5;// Min range of expressiveness
+int cycleDelay = 44;
+int maxDist = 40; // max range of expressiveness
+int minDist = 4;// Min range of expressiveness
 int curWeight = 3; //The weight of the current value in the equalization
 // -------------------------------------
 
 
 
 //maxRange
-  int maxDistFlag = -1;  // max range of expressiveness value we send through the output
+  int maxDistFlag = maxDist;  // max range of expressiveness value we send through the output
 //minRange
   int minDistFlag = 0; // Min range of expressiveness we send as output
 
@@ -45,6 +45,7 @@ int Value3 = 0;
 int pValue1 = 0; 
 int pValue2 = 0;
 int pValue3 = 0;
+int pDistance = 0;
 
 
 void setup() {
@@ -88,7 +89,7 @@ void loop() {
       Also, the "," character is essential for parsing the values,
       The comma is not necessary after the last variable.*/
 equalizeValues();
-
+  
   Serial.print(Value1, DEC); 
   Serial.print(",");
   Serial.print(Value2, DEC); 
@@ -103,6 +104,7 @@ equalizeValues();
   pValue1= Value1;
   pValue2 = Value2;
   pValue3 = Value3;
+  pDistance = distance;
   
 }
 
@@ -110,15 +112,27 @@ void equalizeValues() {
   //int cur = Value1;
   //int pCur = pValue1;
   //Value1 = (((cur + pCur) / 2) + cur )/ 2 );
-  Value1 = eqOne(Value1,pValue1);
-  Value2 = eqOne(Value2,pValue2);
-  Value3 = eqOne(Value3,pValue3);
-  
+ // Value1 = eqOne(Value1,pValue1);
+ // Value2 = eqOne(Value2,pValue2);
+ // Value3 = eqOne(Value3,pValue3);
+  distance = eqOne(distance,pDistance);
 }
+
 
 int eqOne(int cur,int pCur)
 {
-  int r = ((cur * curWeight-1 ) + pCur ) / curWeight;
-             
+  
+//  int pCurA = pCurA = (cur + pCurA ) / 2;
+//  
+//  //we want cur value to go in the direction it will be smootly
+//  if (pCur > cur ) cur = cur - pCurA;
+//  else cur = pCur - pCurA;
+//  
+//  int r = ((cur * curWeight-1 ) + pCur ) / curWeight;
+    int maxStep = 5;
+    if (cur - pCur > maxStep) return pCur + maxStep;
+    if (cur - pCur < maxStep * -1) return pCur - maxStep;
+    
+    int r = (cur + pCur ) / 2;           
   return r;
 }

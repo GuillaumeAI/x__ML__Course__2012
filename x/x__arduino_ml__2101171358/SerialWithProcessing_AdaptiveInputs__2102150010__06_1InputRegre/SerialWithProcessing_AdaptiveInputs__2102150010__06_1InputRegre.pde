@@ -45,7 +45,8 @@ int processingReceivePort = 12000;
 void setup() {
   size(300, 250);
   frameRate(100);
-
+  background(122,0,188);
+  
   //Set up display
   cp5 = new ControlP5(this);
   textAlign(LEFT, CENTER);
@@ -53,7 +54,8 @@ void setup() {
 
   //Populate serial port options:
   List l = Arrays.asList(Serial.list());
-  numPorts = l.size();
+  
+   numPorts = l.size();
   cp5.addScrollableList("Port") //Create drop-down menu
      .setPosition(10, 60)
      .setSize(200, 100)
@@ -61,6 +63,7 @@ void setup() {
      .setItemHeight(20)
      .addItems(l)
      ;
+     
   defaultColor = cp5.getColor();
      
   //Set up OSC:
@@ -71,6 +74,7 @@ void setup() {
 
 //Called when new port (n-th) selected in drop-down
 void Port(int n) {
+  println(n);
  // println(n, cp5.get(ScrollableList.class, "Port").getItem(n));
   CColor c = new CColor();
   c.setBackground(color(255,0,0));
@@ -153,6 +157,7 @@ void sendOneFeatures(String[] s,int featureToSend) {
   try {
    
       float f = Float.parseFloat(s[featureToSend]); 
+      background(122,0,f*10);
       msg.add(f);
       sb.append(String.format("%.2f", f)).append(" ");
     
