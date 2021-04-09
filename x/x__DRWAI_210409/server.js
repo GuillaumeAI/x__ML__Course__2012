@@ -9,7 +9,7 @@ app.get("up",function (req,res,next)
     console.log("Up tested");
 })
 app.use(express.static('public'));
-app.post("/upload",function (req,res,next)
+app.post("/stylize",function (req,res,next)
 {
     console.log("Receiving data...");
     
