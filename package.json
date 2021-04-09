@@ -1,0 +1,27 @@
+{
+  "name": "x__ml__course__2012",
+  "version": "0.0.1",
+  "description": "ML Course Code and space to save my work and run creating using ML",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "chuck sessions/s04/chuck-melody-trigger__210311.ck",
+    "ck-melody": "echo Run this : 'cd sessions && cd s05 && chuck chuck-melody-trigger__210311.ck'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GuillaumeAI/x__ML__Course__2012.git"
+  },
+  "keywords": [
+    "ml",
+    "kadenze"
+  ],
+  "author": "Guillaume D.Isabelle (and many code is from R. Fiebrink)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GuillaumeAI/x__ML__Course__2012/issues"
+  },
+  "homepage": "https://github.com/GuillaumeAI/x__ML__Course__2012#readme"
+}

@@ -8,3 +8,7 @@ Repo of my course on ML for Artist and musician from Goldsmith University
 * Completed Session 2 - 98.8% :)
 
 
+## Regression Modeling
+
+* What is Max/Msp ? How do you synthesize sound on Windows ?
+
