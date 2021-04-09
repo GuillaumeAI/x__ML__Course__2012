@@ -1,0 +1,28 @@
+{
+  "name": "x__drwai_210409",
+  "version": "1.0.0",
+  "description": "You draw and get a stylized image of it.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GuillaumeAI/x__ML__Course__2012.git"
+  },
+  "keywords": [
+    "ai",
+    "ml",
+    "draw"
+  ],
+  "author": "J.Guillaume D.-Isabelle",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GuillaumeAI/x__ML__Course__2012/issues"
+  },
+  "homepage": "https://github.com/GuillaumeAI/x__ML__Course__2012#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "multer": "^1.3.0"
+  }
+}
