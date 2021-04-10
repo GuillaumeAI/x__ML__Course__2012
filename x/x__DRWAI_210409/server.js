@@ -19,16 +19,14 @@ app.get("up", function (req, res, next) {
     console.log("Up tested");
 })
 app.use(express.static('public'));
-function mapModelIdToPort(modelid)
-{
+function mapModelIdToPort(modelid) {
     var basePort = 9000;
     return basePort + parseInt(modelid);
-    
+
 }
-function buildstylizeapiurl(port)
-{
-    var r = 
-    stylizelapihost + ":" + port + stylizelapiroute;
+function buildstylizeapiurl(port) {
+    var r =
+        stylizelapihost + ":" + port + stylizelapiroute;
     console.log("Built API Call URL: " + r);
     return r;
 }
@@ -42,8 +40,8 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
     var portMap = 9000;
     if (hasProp(req.params, "modelid")) {
         var modelid = req.params.modelid;
-       portMap = mapModelIdToPort(modelid);
-       console.log("Using  port: " + portMap);
+        portMap = mapModelIdToPort(modelid);
+        console.log("Using  port: " + portMap);
     }
     else console.log("Using default port: " + portMap);
 
@@ -104,7 +102,7 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                         r.status = 1;
 
                     } else {
-                        
+
 
                         try {
 
@@ -114,8 +112,8 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                             console.log(
                                 Object.keys(error)
                             );
-                            
-        
+
+
                         }
 
 
@@ -146,6 +144,65 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
 
 });
 
+
+app.post("/stylizerv2/:modelid?", function (req, res, next) {
+
+    console.log("stylizerv2::Receiving data..."
+        + `//@STCGoal Transparently this stylize using another host service
+    `);
+    var r = new Object();
+    r.message = "Connected";
+    r.status = 0;
+    var portMap = 9000;
+    if (hasProp(req.params, "modelid")) {
+        var modelid = req.params.modelid;
+        portMap = mapModelIdToPort(modelid);
+        console.log("Using  port: " + portMap);
+    }
+    else console.log("Using default port: " + portMap);
+
+    let body = "";
+
+    var c = 0;
+    req.on("data", chunk => {
+        console.log("Receiving chuck..." + c++);
+        body += chunk.toString(); // convert Buffer to string
+        // console.log(".");
+    });
+
+
+    // var contentImageAsStyle
+    req.on("end", () => {
+        console.log("Content image received :");
+        console.log("   Getting inference from stylization model server");
+
+
+
+        var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
+        if (hasProp(contentJson, "contentImage")) {
+            console.log
+                ("Valid format received.");
+            console.log("Style server is being called : " + stylizeapiurl);
+
+            r.message = "Received a valid format";
+
+            getInferenceFromServer(body, portMap, r, function (r) {
+                //stuff on success
+                res.end(JSON.stringify(r));
+
+            },
+                function (r) {
+                    //stuff on error
+                    res.end(JSON.stringify(r));
+
+                }
+            );
+
+        }
+
+    });
+
+});
 
 
 
@@ -346,65 +403,79 @@ app.listen(PORT, () => {
 
 //-----------API CAller
 
-function getInferenceFromServer(body,portMap,r,callbackSuccess,callbackError)
-{
+/**
+ * Get inferences from Model server
+ * 
+ * sample use :getInferenceFromServer(body, portMap, r, function (r) {
+                //stuff on success
+                res.end(JSON.stringify(r));            },
+                function (r) {
+                    //stuff on error
+                    res.end(JSON.stringify(r));      }        );
+ * @param {*} body 
+ * @param {*} portMap 
+ * @param {*} r 
+ * @param {*} callbackSuccess 
+ * @param {*} callbackError 
+ */
+function getInferenceFromServer(body, portMap, r, callbackSuccess, callbackError) {
     axios
-    .post(
-        buildstylizeapiurl(portMap),
-        body
-    )
-    .then((res2) => {
-        console.log(`statusCode: ${res2.statusCode}`);
-        console.log(
-            Object.keys(res2)
-        );
-        console.log(
-            Object.keys(res2.data)
-        );
+        .post(
+            buildstylizeapiurl(portMap),
+            body
+        )
+        .then((res2) => {
+            console.log(`statusCode: ${res2.statusCode}`);
+            console.log(
+                Object.keys(res2)
+            );
+            console.log(
+                Object.keys(res2.data)
+            );
 
 
-    
-        
-        if (hasProp(res2.data, "stylizedImage")) {
-            r.stylizedImage = res2.data['stylizedImage'];
-            console.log("We received a Stylized image, YAHOUUU.");
 
-            r.message = "We received a Stylized image, YAHOUUU.";
-            r.status = 1;
 
-        } else {
-            
+            if (hasProp(res2.data, "stylizedImage")) {
+                r.stylizedImage = res2.data['stylizedImage'];
+                console.log("We received a Stylized image, YAHOUUU.");
 
-            try {
+                r.message = "We received a Stylized image, YAHOUUU.";
+                r.status = 1;
 
-            } catch (error) {
-                console.log(error);
-                console.log("error writing error file, not getting better ;(");
-                console.log(
-                    Object.keys(error)
-                );
-                
+            } else {
+
+
+                try {
+
+                } catch (error) {
+                    console.log(error);
+                    console.log("error writing error file, not getting better ;(");
+                    console.log(
+                        Object.keys(error)
+                    );
+
+
+                }
+
+
+                console.log("Something did not work, above might help");
+
+                r.message = "NOT received file ok";
+                r.status = -1;
 
             }
 
-
-            console.log("Something did not work, above might help");
-
-            r.message = "NOT received file ok";
-            r.status = -1;
-
-        }
-
-        callbackSuccess(r);
-        // console.log(res2)`;`
-    }).catch((error) => {
-        r.message = "there were errors";
-        r.error = error;
-        r.status = -2;
-        console.error(error);
-        callbackError(r);
-    })
-    ;
+            callbackSuccess(r);
+            // console.log(res2)`;`
+        }).catch((error) => {
+            r.message = "there were errors";
+            r.error = error;
+            r.status = -2;
+            console.error(error);
+            callbackError(r);
+        })
+        ;
 }
 
 //------------UTIL------------
