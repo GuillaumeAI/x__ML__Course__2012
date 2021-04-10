@@ -162,10 +162,21 @@ app.post("/upload", function (req, res, next) {
         console.log("end receiving");
         // console.log(body);
 
-        var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
+        var contentJson = JSON.parse(body);
+         //grab the request body and parse it to a var as JSON
         if (hasProp(contentJson, "contentImage")) {
             console.log("Valid format received.");
         }
+        
+      
+        
+        // console.log(
+        //     Object.keys(body)
+        // ); 
+        // console.log(
+        //     Object.keys(contentJson)
+        // );
+
         var r = new Object();
         r.message = "received file ok";
         r.status = 1;
@@ -174,6 +185,8 @@ app.post("/upload", function (req, res, next) {
 
 
 });
+
+
 // app.post('/upload', upload.single('contentImage'), (req, res) => {
 //     console.log("Receiving uploads...");
 //     if(req.file) {
