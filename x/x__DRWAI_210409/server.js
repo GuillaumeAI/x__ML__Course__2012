@@ -68,7 +68,7 @@ app.post("/stylize", function (req, res, next) {
                         Object.keys(res2.data)
                     );
 
-                    
+
                     if (debug) {
                         var jsonContentResponse2 = JSON.stringify(res2.data);
                         fs.writeFile('err.txt', jsonContentResponse2, function (err) {
@@ -77,11 +77,12 @@ app.post("/stylize", function (req, res, next) {
                         });
                     }
                     if (hasProp(res2.data, "stylizedImage")) {
-                        r.stylizedImage = res2.data.stylizedImage;
+                        r.stylizedImage = res2.data['stylizedImage'];
                         console.log("We received a Stylized image, YAHOUUU.");
 
-                        r.message = "received file ok: " + res2.statusCode;
+                        r.message = "We received a Stylized image, YAHOUUU.";
                         r.status = 1;
+
                     } else {
                         console.log();
 
@@ -97,10 +98,16 @@ app.post("/stylize", function (req, res, next) {
 
                         r.message = "NOT received file ok";
                         r.status = -1;
+
                     }
 
+                    res.end(JSON.stringify(r));
                     // console.log(res2)`;`
                 }).catch((error) => {
+                    r.message = "there were errors";
+                    r.error = error;
+                    r.status = -2;
+                    res.end(JSON.stringify(r));
                     console.error(error);
                 })
                 ;
@@ -109,7 +116,6 @@ app.post("/stylize", function (req, res, next) {
 
 
 
-        res.end(JSON.stringify(r));
 
     });
 
