@@ -1,8 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
-var http = require('http');
-const request = require('request');
+
 
 var stylizelapihost = "http://127.0.0.1";
 var stylizelapiport = "9000";
@@ -30,41 +29,13 @@ app.post("/stylize", function (req, res, next) {
     });
 
 
-   // var contentImageAsStyle
+    // var contentImageAsStyle
     req.on("end", () => {
         console.log("Content image received :");
         console.log("   Getting inference from stylization model server");
 
-     
-        request.post(stylizeapiurl).form({ json:body});
-            
 
-    //     var request = http.request({
-    //         host: stylizelapihost,
-    //         port: stylizelapiport,
-    //         path: stylizelapiroute,
-    //         method: 'POST',
-    //         headers: {
-    //             // headers such as "Cookie" can be extracted from req object and sent to /test
-    //         }
-    //     }, function (response) {
-    //         var data = '';
-    //         response.setEncoding('utf8');
-    //         response.on('data', (chunk) => {
-    //             data += chunk;
-    //         });
-    //         response.on('end', () => {
-    //             //@a Sending data as we received it.
-    //             res.end(data);
-    //         });
-    //     request.end();
-    // });
-
-    // var r = new Object();
-    // r.message = "received file ok";
-    // r.status = 1;
-    // res.end(JSON.stringify(r));
-});
+    });
 
 });
 app.post("/upload", function (req, res, next) {
