@@ -38,6 +38,8 @@ function buildstylizeapiurl(port) {
     console.log("Built API Call URL: " + r);
     return r;
 }
+
+
 app.post("/stylizer/:modelid?", function (req, res, next) {
     console.log("Receiving data..."
         + `//@STCGoal Transparently this stylize using another host service
@@ -86,13 +88,15 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                     // }
                 )
                 .then((res2) => {
-                    console.log(`statusCode: ${res2.statusCode}`);
-                    console.log(
-                        Object.keys(res2)
-                    );
-                    console.log(
-                        Object.keys(res2.data)
-                    );
+                    if (verbose > 1) {
+                        console.log(`statusCode: ${res2.statusCode}`);
+                        console.log(
+                            Object.keys(res2)
+                        );
+                        console.log(
+                            Object.keys(res2.data)
+                        );
+                    }
 
 
                     if (debug) {
@@ -132,6 +136,8 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
 
                     }
 
+                    r.contentImage = contentJson.contentImage;
+                    writeResultHTML(r,"result-stylizer-" + portMap + ".html");
                     res.end(JSON.stringify(r));
                     // console.log(res2)`;`
                 }).catch((error) => {
@@ -152,7 +158,7 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
 
 });
 
-
+var keepTrack = true;
 app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
 
     console.log("composer::Receiving data..."
@@ -203,37 +209,47 @@ app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
                 ("Valid format received.");
             console.log("Style server is being called : " + stylizeapiurl);
 
+            if (keepTrack) r.contentImage = contentJson.contentImage;
+
             r.message = "Received a valid format";
 
-            getInferenceFromServer(body, portMap, r, function (r) {
-                //stuff on success
-
-
-                //@STCGoal Get another Inference from PortMap2
-                var req2 = new Object();
-                req2.contentImage = r.stylizedImage; // getting our result as input for the second pass
-                var body2 = JSON.stringify(req2);
-
-
-                getInferenceFromServer(body2, portMap2, r, function (r2) {
+            getInferenceFromServer(body, portMap)
+                .then(r2 => {
                     //stuff on success
+                    if (keepTrack) r.stylizedImage1 = r2.stylizedImage;
 
-                    res.end(JSON.stringify(r2));
-                },
-                    function (r2) {
-                        //stuff on error
-                        res.end(JSON.stringify(r2));
+                    //@STCGoal Get another Inference from PortMap2
+                    var req2 = new Object();
+                    req2.contentImage = r2.stylizedImage; // getting our result as input for the second pass
+                    var body2 = JSON.stringify(req2);
 
-                    }
-                );
+                    console.log("---------------------------------------------");
 
-            },
-                function (r) {
+                    getInferenceFromServer(body2, portMap2)
+                        .then(r3 => {
+                            //stuff on success
+                            r.stylizedImage = r3.stylizedImage;
+                            try {
+                                writeResultHTML(r, "result-composer-" + portMap + "-"+ portMap2 + ".html");
+
+                            } catch (error) {
+
+                            }
+
+                            res.end(JSON.stringify(r));
+                        }).catch(r3 => {
+                            //stuff on error
+                            res.end(JSON.stringify(r3));
+
+                        }
+                        );
+
+                })
+                .catch(r => {
                     //stuff on error
                     res.end(JSON.stringify(r));
 
-                }
-            );
+                });
 
         }
 
@@ -241,7 +257,7 @@ app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
 
 });
 
-
+//---------------------------------------------------------------------
 app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
 
     console.log("composerV2::Receiving data..."
@@ -294,98 +310,99 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
             console.log("Style server is being called : " + stylizeapiurl);
 
             r.message = "Received a valid format";
+            r.contentImage = contentJson.contentImage; //@db Keeping the content image for the return
 
-            getInferenceFromServer(body, portMap, r)
-            .then( r2 =>  {
-                //stuff on success
-
-
-                //@STCGoal Get another Inference from PortMap2
-                var req2 = new Object();
-
-                //@STCGoal Increase size of content image before posting it.
-
-                var tmpContent = r2.stylizedImage;
-                var tmpContentDecoded = decode_base64ToString(r2.stylizedImage);
-                var tmpFilename = "_composetmp.jpg";
-                var tmpFilename2 = "_composetmpResized.jpg";
-
-                fs.writeFile('_tmpContent.txt', tmpContent, function (err) {
-                    if (err) console.log(err);
-                    console.log('saved');
-                });
-
-                fs.writeFile('_tmpContentDecoded.jpg', tmpContentDecoded, function (err) {
-                    if (err) console.log(err);
-                    console.log('saved');
-                });
-
-                decode_base64(tmpContent, tmpFilename);
-
-                //@a
-
-                // open a file called "lenna.png"
-                Jimp.read(tmpFilename, (err3, lenna) => {
-                    if (err3) console.log(err3);
-                    var w = 800;
-                    var h = 1024; var q = 90;
-
-                    lenna
-                        .resize(w, Jimp.AUTO) // resize
-                        .quality(q) // set JPEG quality
-                        .write(tmpFilename2); // save
+            getInferenceFromServer(body, portMap)
+                .then(r2 => {
+                    //stuff on success
 
 
-                    /* Image Manipulation Methods (Default Plugins)
-blit - Blit an image onto another.
-blur - Quickly blur an image.
-color - Various color manipulation methods.
-contain - Contain an image within a height and width.
-cover - Scale the image so the given width and height keeping the aspect ratio.
-displace - Displaces the image based on a displacement map
-dither - Apply a dither effect to an image.
-flip - Flip an image along it's x or y axis.
-gaussian - Hardcore blur.
-invert - Invert an images colors
-mask - Mask one image with another.
-normalize - Normalize the colors in an image
-print - Print text onto an image
-resize - Resize an image.
-rotate - Rotate an image.
-scale - Uniformly scales the image by a factor.
+                    //@STCGoal Get another Inference from PortMap2
+                    var req2 = new Object();
 
-https://github.com/oliver-moran/jimp#image-manipulation-methods-default-plugins
- */
+                    //@STCGoal Increase size of content image before posting it.
+
+                    var tmpContent = r2.stylizedImage;
+                    var tmpContentDecoded = decode_base64ToString(r2.stylizedImage);
+                    var tmpFilename = "_composetmp.jpg";
+                    var tmpFilename2 = "_composetmpResized.jpg";
+
+                    fs.writeFile('_tmpContent.txt', tmpContent, function (err) {
+                        if (err) console.log(err);
+                        console.log('saved');
+                    });
+
+                    fs.writeFile('_tmpContentDecoded.jpg', tmpContentDecoded, function (err) {
+                        if (err) console.log(err);
+                        console.log('saved');
+                    });
+
+                    decode_base64(tmpContent, tmpFilename);
+
+                    //@a
+
+                    // open a file called "lenna.png"
+                    Jimp.read(tmpFilename, (err3, lenna) => {
+                        if (err3) console.log(err3);
+                        var w = 800;
+                        var h = 1024; var q = 90;
+
+                        lenna
+                            .resize(w, Jimp.AUTO) // resize
+                            .quality(q) // set JPEG quality
+                            .write(tmpFilename2); // save
 
 
-                    var resizedNewStylizedContent = encode_base64_v3_toString(tmpFilename2);
+                        /* Image Manipulation Methods (Default Plugins)
+    blit - Blit an image onto another.
+    blur - Quickly blur an image.
+    color - Various color manipulation methods.
+    contain - Contain an image within a height and width.
+    cover - Scale the image so the given width and height keeping the aspect ratio.
+    displace - Displaces the image based on a displacement map
+    dither - Apply a dither effect to an image.
+    flip - Flip an image along it's x or y axis.
+    gaussian - Hardcore blur.
+    invert - Invert an images colors
+    mask - Mask one image with another.
+    normalize - Normalize the colors in an image
+    print - Print text onto an image
+    resize - Resize an image.
+    rotate - Rotate an image.
+    scale - Uniformly scales the image by a factor.
+    
+    https://github.com/oliver-moran/jimp#image-manipulation-methods-default-plugins
+     */
 
-                    req2.contentImage = resizedNewStylizedContent; // getting our result as input for the second pass
+
+                        var resizedNewStylizedContent = encode_base64_v3_toString(tmpFilename2);
+
+                        req2.contentImage = resizedNewStylizedContent; // getting our result as input for the second pass
 
 
-                    var body2 = JSON.stringify(req2);
+                        var body2 = JSON.stringify(req2);
 
 
-                    getInferenceFromServer(body2, portMap2, r2)
-                    .then(r3 => {
-                        //stuff on success
+                        getInferenceFromServer(body2, portMap2, r2)
+                            .then(r3 => {
+                                //stuff on success
 
-                        res.end(JSON.stringify(r3));
-                    }).catch(r3 =>  {
-                            //stuff on error
-                            res.end(JSON.stringify(r3));
+                                res.end(JSON.stringify(r3));
+                            }).catch(r3 => {
+                                //stuff on error
+                                res.end(JSON.stringify(r3));
 
-                        }
-                    );
+                            }
+                            );
 
-                }).catch (r => {
+                    }).catch(r => {
                         //stuff on error
                         res.end(JSON.stringify(r));
 
                     }
-                );
+                    );
 
-            });
+                });
 
         }
 
@@ -667,48 +684,55 @@ app.listen(PORT, () => {
  * @param {*} callbackSuccess 
  * @param {*} callbackError 
  */
-function getInferenceFromServer(body, portMap, r) {
-    axios
-        .post(
-            buildstylizeapiurl(portMap),
-            body
-        )
-        .then((res2) => {
+function getInferenceFromServer(body, portMap) {
+    var r = new Object();
+    // Return new promise 
+    return new Promise(function (resolve, reject) {
+        // Do async job
 
 
-            if (hasProp(res2.data, "stylizedImage")) {
-                r.stylizedImage = res2.data['stylizedImage'];
-                console.log("We received a Stylized image, YAHOUUU.");
-
-                r.message = "We received a Stylized image, YAHOUUU.";
-                r.status = 1;
-                r.success = true;
-                return Promise.resolve(r);
-
-            } else {
+        axios
+            .post(
+                buildstylizeapiurl(portMap),
+                body
+            )
+            .then((res2) => {
 
 
-                console.log("Something did not work, above might help");
+                if (hasProp(res2.data, "stylizedImage")) {
+                    r.stylizedImage = res2.data['stylizedImage'];
+                    console.log("We received a Stylized image, YAHOUUU.");
 
-                r.message = "NOT received file ok (bad response structure)";
+                    r.message = "We received a Stylized image, YAHOUUU.";
+                    r.status = 1;
+                    r.success = true;
+                    return resolve(r);
+
+                } else {
+
+
+                    console.log("Something did not work, above might help");
+
+                    r.message = "NOT received file ok (bad response structure)";
+                    r.success = false;
+                    r.status = -1;
+                    return reject(r);
+                }
+
+                // console.log(res2)`;`
+            }).catch((error) => {
+                r.message = "there were errors";
+                r.error = error;
                 r.success = false;
-                r.status = -1;
-                return Promise.reject(r);
-            }
+                r.status = -2;
+                if (verbose > 1)
+                    console.error(error);
 
-            // console.log(res2)`;`
-        }).catch((error) => {
-            r.message = "there were errors";
-            r.error = error;
-            r.success = false;
-            r.status = -2;
-            if (verbose > 1)
-                console.error(error);
-
-            console.log("");
-            return Promise.reject(r);
-        })
-        ;
+                console.log("");
+                return reject(r);
+            })
+            ;
+    });
 }
 
 //------------UTIL------------
@@ -794,4 +818,37 @@ function encode_base64_v3_toString(filename) {
     var jsonData = JSON.stringify(jsonRequest);
 
     return jsonData;
+}
+
+
+
+
+//------------------Write results-------------
+
+
+
+
+
+function writeResultHTML(r, filename) {
+    var s =
+        `<table><tr><td>Content</td><td>Final</td></tr>
+    <tr>
+    <td><img src="${r.contentImage}"></td>
+    <td><img src="${r.stylizedImage}"></td>
+    </tr>
+    `
+
+    if (hasProp(r, "stylizedImage1"))
+        s =
+            `<table><tr><td>Content</td><td>Intermediate</td><td>Final</td></tr>
+    <tr>
+    <td><img src="${r.contentImage}"></td>
+    <td><img src="${r.stylizedImage1}"></td>
+    <td><img src="${r.stylizedImage}"></td>
+    </tr>
+    `
+    fs.writeFile(filename, s, function (err) {
+        if (err) return console.log(err);
+        console.log('err.txt saved');
+    });
 }
