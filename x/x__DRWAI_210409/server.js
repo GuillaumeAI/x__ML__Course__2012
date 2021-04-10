@@ -10,6 +10,7 @@ var stylizelapihost = "http://127.0.0.1";
 var stylizelapiport = "9002";
 var stylizelapiport2 = "9003";
 var stylizelapiroute = "/stylize";
+var styliZERlapiroute = "/stylizer";
 var stylizeapiurl = stylizelapihost + ":" + stylizelapiport + stylizelapiroute;
 
 const app = express();
@@ -18,11 +19,33 @@ app.get("up", function (req, res, next) {
     console.log("Up tested");
 })
 app.use(express.static('public'));
-
-app.post("/stylize", function (req, res, next) {
+function mapModelIdToPort(modelid)
+{
+    var basePort = 9000;
+    return basePort + parseInt(modelid);
+    
+}
+function buildstylizeapiurl(port)
+{
+    var r = 
+    stylizelapihost + ":" + port + stylizelapiroute;
+    console.log("Built API Call URL: " + r);
+    return r;
+}
+app.post("/stylizer/:modelid?", function (req, res, next) {
     console.log("Receiving data..."
         + `//@STCGoal Transparently this stylize using another host service
     `);
+    var r = new Object();
+    r.message = "Connected";
+    r.status = 0;
+    var portMap = 9000;
+    if (hasProp(req.params, "modelid")) {
+        var modelid = req.params.modelid;
+       portMap = mapModelIdToPort(modelid);
+       console.log("Using  port: " + portMap);
+    }
+    else console.log("Using default port: " + portMap);
 
     let body = "";
 
@@ -40,10 +63,6 @@ app.post("/stylize", function (req, res, next) {
         console.log("   Getting inference from stylization model server");
 
 
-        var r = new Object();
-        r.message = "initialized";
-        r.status = 0;
-
 
         var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
         if (hasProp(contentJson, "contentImage")) {
@@ -54,7 +73,7 @@ app.post("/stylize", function (req, res, next) {
             r.message = "Received a valid format";
             axios
                 .post(
-                    stylizeapiurl,
+                    buildstylizeapiurl(portMap),
                     body
                     // {
                     //     contentImage: contentJson.contentImage
@@ -85,13 +104,18 @@ app.post("/stylize", function (req, res, next) {
                         r.status = 1;
 
                     } else {
-                        console.log();
+                        
 
                         try {
 
                         } catch (error) {
-                            console.log("error writing error file, not getting better ;(");
                             console.log(error);
+                            console.log("error writing error file, not getting better ;(");
+                            console.log(
+                                Object.keys(error)
+                            );
+                            
+        
                         }
 
 
@@ -130,7 +154,7 @@ app.post("/stylize", function (req, res, next) {
 // V1 Stylize
 
 
-app.post("/stylizeV1", function (req, res, next) {
+app.post("/stylize", function (req, res, next) {
     console.log("stylizeV1::Receiving data..."
         + `//@STCGoal Transparently this stylize using another host service
     `);
@@ -276,13 +300,13 @@ app.post("/upload", function (req, res, next) {
         // console.log(body);
 
         var contentJson = JSON.parse(body);
-         //grab the request body and parse it to a var as JSON
+        //grab the request body and parse it to a var as JSON
         if (hasProp(contentJson, "contentImage")) {
             console.log("Valid format received.");
         }
-        
-      
-        
+
+
+
         // console.log(
         //     Object.keys(body)
         // ); 
