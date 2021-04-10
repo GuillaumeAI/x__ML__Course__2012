@@ -1,5 +1,8 @@
+'use strict';
 var debug = false;
 var verbose = 1;
+var composeResizeWidth = 800;
+var composeResizeQual = 90;
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
@@ -137,7 +140,7 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                     }
 
                     r.contentImage = contentJson.contentImage;
-                    writeResultHTML(r,"result-stylizer-" + portMap + ".html");
+                    writeResultHTML(r, "result-stylizer-" + portMap + ".html");
                     res.end(JSON.stringify(r));
                     // console.log(res2)`;`
                 }).catch((error) => {
@@ -230,7 +233,7 @@ app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
                             //stuff on success
                             r.stylizedImage = r3.stylizedImage;
                             try {
-                                writeResultHTML(r, "result-composer-" + portMap + "-"+ portMap2 + ".html");
+                                writeResultHTML(r, "result-composer-" + portMap + "-" + portMap2 + ".html");
 
                             } catch (error) {
 
@@ -316,6 +319,7 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
                 .then(r2 => {
                     //stuff on success
 
+                    if (keepTrack) r.stylizedImage1 = r2.stylizedImage;
 
                     //@STCGoal Get another Inference from PortMap2
                     var req2 = new Object();
@@ -327,67 +331,93 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
                     var tmpFilename = "_composetmp.jpg";
                     var tmpFilename2 = "_composetmpResized.jpg";
 
-                    fs.writeFile('_tmpContent.txt', tmpContent, function (err) {
-                        if (err) console.log(err);
-                        console.log('saved');
-                    });
+                    console.log("Processing the first style as input for a second iteration...");
+                    //decode the file we will resize
+                    decode_base64(tmpContent, tmpFilename); //@Status OK
+                   
+                    console.log("Decoded...");
+                    //@a Rezise
 
-                    fs.writeFile('_tmpContentDecoded.jpg', tmpContentDecoded, function (err) {
-                        if (err) console.log(err);
-                        console.log('saved');
-                    });
-
-                    decode_base64(tmpContent, tmpFilename);
-
-                    //@a
+                    
 
                     // open a file called "lenna.png"
-                    Jimp.read(tmpFilename, (err3, lenna) => {
-                        if (err3) console.log(err3);
-                        var w = 800;
-                        var h = 1024; var q = 90;
+                    Jimp.read(Buffer.from(cleanBase64String(r2.stylizedImage),'base64'), (err3, lenna) => {
+                        if (err3) throw (err3);
+
+                        console.log("Read by Jimp");
 
                         lenna
-                            .resize(w, Jimp.AUTO) // resize
-                            .quality(q) // set JPEG quality
-                            .write(tmpFilename2); // save
+                            .resize(composeResizeWidth, Jimp.AUTO) // resize
+                            .quality(composeResizeQual) // set JPEG quality
+                            .getBase64(Jimp.AUTO,(errL,resL) => {
+                                  fs.writeFileSync("_debug-resizegetbase64_jimp" +  ".json",JSON.stringify (resL));
+                                  //@RESOLVING --USING Base64 as output
+                            });
+                         //   .write(tmpFilename2); //@STATUS Ok
 
 
+                        process.exit(0);
+                        console.log("Resized");
+                        
                         /* Image Manipulation Methods (Default Plugins)
-    blit - Blit an image onto another.
-    blur - Quickly blur an image.
-    color - Various color manipulation methods.
-    contain - Contain an image within a height and width.
-    cover - Scale the image so the given width and height keeping the aspect ratio.
-    displace - Displaces the image based on a displacement map
-    dither - Apply a dither effect to an image.
-    flip - Flip an image along it's x or y axis.
-    gaussian - Hardcore blur.
-    invert - Invert an images colors
-    mask - Mask one image with another.
-    normalize - Normalize the colors in an image
-    print - Print text onto an image
-    resize - Resize an image.
-    rotate - Rotate an image.
-    scale - Uniformly scales the image by a factor.
-    
-    https://github.com/oliver-moran/jimp#image-manipulation-methods-default-plugins
-     */
-
-
-                        var resizedNewStylizedContent = encode_base64_v3_toString(tmpFilename2);
-
-                        req2.contentImage = resizedNewStylizedContent; // getting our result as input for the second pass
-
-
-                        var body2 = JSON.stringify(req2);
-
-
-                        getInferenceFromServer(body2, portMap2, r2)
-                            .then(r3 => {
+                        blit - Blit an image onto another.
+                        blur - Quickly blur an image.
+                        color - Various color manipulation methods.
+                        contain - Contain an image within a height and width.
+                        cover - Scale the image so the given width and height keeping the aspect ratio.
+                        displace - Displaces the image based on a displacement map
+                        dither - Apply a dither effect to an image.
+                        flip - Flip an image along it's x or y axis.
+                        gaussian - Hardcore blur.
+                        invert - Invert an images colors
+                        mask - Mask one image with another.
+                        normalize - Normalize the colors in an image
+                        print - Print text onto an image
+                        resize - Resize an image.
+                        rotate - Rotate an image.
+                        scale - Uniformly scales the image by a factor.
+                        
+                        https://github.com/oliver-moran/jimp#image-manipulation-methods-default-plugins
+                        */
+                       
+                       
+                        //@STCIssue HAPPENS OVER HERE - We get an empty string
+                      // var resizedNewStylizedContent = encodeFile_to_base64String_v3(tmpFilename2);
+                          var resizedNewStylizedContent =  
+                            encode_base64_v3_to_JSONRequestFile(tmpFilename2,"_debug_tabarnak.json");
+                          ;
+                          console.log(resizedNewStylizedContent);
+   
+                          
+                       console.log("Recoded");
+                       req2.contentImage = resizedNewStylizedContent.contentImage; // getting our result as input for the second pass
+                       fs.writeFileSync("_debug-resizedNewStylizedContent" +  ".json",JSON.stringify (resizedNewStylizedContent));
+                       
+                       if (keepTrack)
+                       r.stylizedImage1 = resizedNewStylizedContent.contentImage;
+                       
+                       var body2 = JSON.stringify(req2);
+                       
+                       
+                       console.log("Entering service call...");
+                       getInferenceFromServer(body2, portMap2)
+                       .then(r3 => {
+                                
+                                console.log("SEcond iteration completing...");
                                 //stuff on success
+                                //if (keepTrack) 
 
-                                res.end(JSON.stringify(r3));
+                                r.stylizedImage = r3.stylizedImage;
+                                try {
+                                    var fname = "result-composerv2-" + portMap + "-" + portMap2 + ".html";
+                                    console.log("----------Writting results: " + fname);
+                                    writeResultHTML(r, fname);
+
+                                } catch (error) {
+
+                                }
+                                res.end(JSON.stringify(r));
+
                             }).catch(r3 => {
                                 //stuff on error
                                 res.end(JSON.stringify(r3));
@@ -672,24 +702,21 @@ app.listen(PORT, () => {
 /**
  * Get inferences from Model server
  * 
- * sample use :getInferenceFromServer(body, portMap, r, function (r) {
-                //stuff on success
-                res.end(JSON.stringify(r));            },
-                function (r) {
-                    //stuff on error
-                    res.end(JSON.stringify(r));      }        );
+ * sample use :getInferenceFromServer(body, portMap) .then (r => {}).catch (err => {});
  * @param {*} body 
  * @param {*} portMap 
- * @param {*} r 
- * @param {*} callbackSuccess 
- * @param {*} callbackError 
  */
 function getInferenceFromServer(body, portMap) {
     var r = new Object();
     // Return new promise 
     return new Promise(function (resolve, reject) {
         // Do async job
-
+        try {
+            fs.writeFileSync("_debug-" + portMap + ".req.json", body);
+            
+        } catch (error) {
+            console.log("we tried to write debug stuff but it failed");
+        }
 
         axios
             .post(
@@ -701,12 +728,12 @@ function getInferenceFromServer(body, portMap) {
 
                 if (hasProp(res2.data, "stylizedImage")) {
                     r.stylizedImage = res2.data['stylizedImage'];
-                    console.log("We received a Stylized image, YAHOUUU.");
+                    console.log("We received a Stylized image, YAHOUUU. PortMap: " + portMap);
 
                     r.message = "We received a Stylized image, YAHOUUU.";
                     r.status = 1;
                     r.success = true;
-                    return resolve(r);
+                    resolve(r);
 
                 } else {
 
@@ -716,7 +743,7 @@ function getInferenceFromServer(body, portMap) {
                     r.message = "NOT received file ok (bad response structure)";
                     r.success = false;
                     r.status = -1;
-                    return reject(r);
+                    reject(r);
                 }
 
                 // console.log(res2)`;`
@@ -727,9 +754,10 @@ function getInferenceFromServer(body, portMap) {
                 r.status = -2;
                 if (verbose > 1)
                     console.error(error);
-
-                console.log("");
-                return reject(r);
+                    
+                    console.error(error.message);
+                console.log("wow there is a catch...");
+                reject(r);
             })
             ;
     });
@@ -737,6 +765,15 @@ function getInferenceFromServer(body, portMap) {
 
 //------------UTIL------------
 
+function cleanBase64String(s)
+{
+    if(s.indexOf('base64') != -1) {
+        return s.replace(/^data:image\/png;base64,/, "");
+    } else {
+        // handle as Buffer, etc..
+        return s;
+    }
+}
 /** tells if an object has a prop of that name
  *
  * @param {*} o
@@ -784,22 +821,55 @@ function decode_base64ToString(base64str) {
 //-------------------create request encoded image
 
 /**
+ * Encode a file to base64 contentImage request
  * @param  {string} filename
  * @param  {string} targetJsonFile
  */
-function encode_base64_v3(filename, targetJsonFile) {
+function encodeFile_to_base64ContentRequestFile_v3(filename, targetJsonFile) {
 
     fs.writeFileSync(targetJsonFile,
-        encode_base64_v3_toString(filename)
+        encodeFile_to_base64String_v3Request(filename)
     );
 
 }
+
 
 /**
  * @param  {string} filename
  * @param  {string} targetJsonFile
  */
-function encode_base64_v3_toString(filename) {
+//@STCIssue NOT WORKING, READS nothing in the file
+ function encode_base64_v3o_to_JSONRequest(filename) {
+    var base64Raw = fs.readFileSync(filename, 'base64');
+    console.log(base64Raw);
+
+    var base64 = base64Raw;
+    var ext = path.extname(filename).replace(".", "");
+    if (ext == "jpg" || ext == "JPG" || ext == "JPEG") ext = "jpeg";
+    if (ext == "pneg" || ext == "PNG" || ext == "Png") ext = "png";
+
+
+    if (base64Raw.indexOf("data:") == -1) //fixing the string
+        base64 = `data:image/${ext};base64,`
+            + base64Raw;
+
+    //console.log(base64);
+    var jsonRequest = new Object();
+    jsonRequest.contentImage = base64;
+    var jsonData = JSON.stringify(jsonRequest);
+
+return jsonData;
+    //console.log("Should have saved :" + targetJsonFile);
+
+}
+
+
+/**
+ * Encode an image file into base64 JSON request file 
+ * @param  {string} filename
+ * @param  {string} targetJsonFile
+ */
+ function encode_base64_v3_to_JSONRequestObject(filename) {
     var base64Raw = fs.readFileSync(filename, 'base64');
 
     var base64 = base64Raw;
@@ -811,6 +881,77 @@ function encode_base64_v3_toString(filename) {
     if (base64Raw.indexOf("data:") == -1) //fixing the string
         base64 = `data:image/${ext};base64,`
             + base64Raw;
+
+    //console.log(base64);
+    var jsonRequest = new Object();
+    jsonRequest.contentImage = base64;
+    return jsonRequest;
+
+    //console.log("Should have saved :" + targetJsonFile);
+
+}
+
+
+/**
+ * Encode an image file into base64 JSON request file 
+ * @param  {string} filename
+ * @param  {string} targetJsonFile
+ */
+ function encode_base64_v3_to_JSONRequestFile(filename, targetJsonFile) {
+    var base64Raw = fs.readFileSync(filename, 'base64');
+
+    var base64 = base64Raw;
+    var ext = path.extname(filename).replace(".", "");
+    if (ext == "jpg" || ext == "JPG" || ext == "JPEG") ext = "jpeg";
+    if (ext == "pneg" || ext == "PNG" || ext == "Png") ext = "png";
+
+
+    if (base64Raw.indexOf("data:") == -1) //fixing the string
+        base64 = `data:image/${ext};base64,`
+            + base64Raw;
+
+    //console.log(base64);
+    var jsonRequest = new Object();
+    jsonRequest.contentImage = base64;
+    var jsonData = JSON.stringify(jsonRequest);
+
+    fs.writeFileSync(targetJsonFile, jsonData);
+    //console.log("Should have saved :" + targetJsonFile);
+
+}
+
+/**
+ * @param  {string} filename
+ * @param  {string} targetJsonFile
+ */
+function encodeFile_to_base64String_v3(filename) {
+    console.log(`Encoding file (${filename}) to base64 string`);
+
+    var base64Raw = fs.readFileSync(filename, 'base64');
+
+    var base64 = base64Raw;
+    var ext = path.extname(filename).replace(".", "");
+    if (ext == "jpg" || ext == "JPG" || ext == "JPEG") ext = "jpeg";
+    if (ext == "pneg" || ext == "PNG" || ext == "Png") ext = "png";
+
+
+    if (base64Raw.indexOf("data:") == -1) //fixing the string
+        base64 = `data:image/${ext};base64,`
+            + base64Raw;
+
+  return  base64;
+}
+
+
+/**
+ * @param  {string} filename
+ * @param  {string} targetJsonFile
+ */
+function encodeFile_to_base64String_v3Request(filename) {
+  
+    
+    var base64 = encodeFile_to_base64String_v3(filename);
+    
 
     //console.log(base64);
     var jsonRequest = new Object();
@@ -836,7 +977,7 @@ function writeResultHTML(r, filename) {
     <td><img src="${r.contentImage}"></td>
     <td><img src="${r.stylizedImage}"></td>
     </tr>
-    `
+    `;
 
     if (hasProp(r, "stylizedImage1"))
         s =
@@ -846,9 +987,8 @@ function writeResultHTML(r, filename) {
     <td><img src="${r.stylizedImage1}"></td>
     <td><img src="${r.stylizedImage}"></td>
     </tr>
-    `
-    fs.writeFile(filename, s, function (err) {
-        if (err) return console.log(err);
-        console.log('err.txt saved');
-    });
+    `;
+
+    fs.writeFileSync(filename, s);
+
 }
