@@ -1,3 +1,4 @@
+var debug = false;
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
@@ -53,19 +54,30 @@ app.post("/stylize", function (req, res, next) {
             axios
                 .post(
                     stylizeapiurl,
-body
+                    body
                     // {
                     //     contentImage: contentJson.contentImage
                     // }
                 )
                 .then((res2) => {
                     console.log(`statusCode: ${res2.statusCode}`);
-
+                    console.log(
+                        Object.keys(res2)
+                    );
                     console.log(
                         Object.keys(res2.data)
                     );
 
+                    
+                    if (debug) {
+                        var jsonContentResponse2 = JSON.stringify(res2.data);
+                        fs.writeFile('err.txt', jsonContentResponse2, function (err) {
+                            if (err) return console.log(err);
+                            console.log('err.txt saved');
+                        });
+                    }
                     if (hasProp(res2.data, "stylizedImage")) {
+                        r.stylizedImage = res2.data.stylizedImage;
                         console.log("We received a Stylized image, YAHOUUU.");
 
                         r.message = "received file ok: " + res2.statusCode;
@@ -75,11 +87,6 @@ body
 
                         try {
 
-                            var jsonContentResponse2 = JSON.stringify(res2.body);
-                            fs.writeFile('err.txt', jsonContentResponse2, function (err) {
-                                if (err) return console.log(err);
-                                console.log('err.txt saved');
-                            });
                         } catch (error) {
                             console.log("error writing error file, not getting better ;(");
                             console.log(error);
