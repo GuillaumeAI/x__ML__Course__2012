@@ -338,6 +338,75 @@ app.listen(PORT, () => {
 
 
 
+
+
+
+
+
+
+//-----------API CAller
+
+function getInferenceFromServer(body,portMap,r,callbackSuccess,callbackError)
+{
+    axios
+    .post(
+        buildstylizeapiurl(portMap),
+        body
+    )
+    .then((res2) => {
+        console.log(`statusCode: ${res2.statusCode}`);
+        console.log(
+            Object.keys(res2)
+        );
+        console.log(
+            Object.keys(res2.data)
+        );
+
+
+    
+        
+        if (hasProp(res2.data, "stylizedImage")) {
+            r.stylizedImage = res2.data['stylizedImage'];
+            console.log("We received a Stylized image, YAHOUUU.");
+
+            r.message = "We received a Stylized image, YAHOUUU.";
+            r.status = 1;
+
+        } else {
+            
+
+            try {
+
+            } catch (error) {
+                console.log(error);
+                console.log("error writing error file, not getting better ;(");
+                console.log(
+                    Object.keys(error)
+                );
+                
+
+            }
+
+
+            console.log("Something did not work, above might help");
+
+            r.message = "NOT received file ok";
+            r.status = -1;
+
+        }
+
+        callbackSuccess(r);
+        // console.log(res2)`;`
+    }).catch((error) => {
+        r.message = "there were errors";
+        r.error = error;
+        r.status = -2;
+        console.error(error);
+        callbackError(r);
+    })
+    ;
+}
+
 //------------UTIL------------
 
 /** tells if an object has a prop of that name
