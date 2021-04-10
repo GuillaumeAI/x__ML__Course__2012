@@ -371,14 +371,14 @@ https://github.com/oliver-moran/jimp#image-manipulation-methods-default-plugins
                         //stuff on success
 
                         res.end(JSON.stringify(r3));
-                    }).reject(r3 =>  {
+                    }).catch(r3 =>  {
                             //stuff on error
                             res.end(JSON.stringify(r3));
 
                         }
                     );
 
-                }).reject (r => {
+                }).catch (r => {
                         //stuff on error
                         res.end(JSON.stringify(r));
 
