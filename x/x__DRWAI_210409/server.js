@@ -1,10 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
+const axios = require('axios');
+const { request } = require('express');
 
-
+var fs = require('fs');
 var stylizelapihost = "http://127.0.0.1";
-var stylizelapiport = "9000";
+var stylizelapiport = "9002";
+var stylizelapiport2 = "9003";
 var stylizelapiroute = "/stylize";
 var stylizeapiurl = stylizelapihost + ":" + stylizelapiport + stylizelapiroute;
 
@@ -35,9 +38,99 @@ app.post("/stylize", function (req, res, next) {
         console.log("   Getting inference from stylization model server");
 
 
+        var r = new Object();
+        r.message = "initialized";
+        r.status = 0;
+
+
+        var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
+        if (hasProp(contentJson, "contentImage")) {
+            console.log
+                ("Valid format received.");
+            console.log("Style server is being called : " + stylizeapiurl);
+
+            r.message = "Received a valid format";
+            axios
+                .post(
+                    stylizeapiurl,
+body
+                    // {
+                    //     contentImage: contentJson.contentImage
+                    // }
+                )
+                .then((res2) => {
+                    console.log(`statusCode: ${res2.statusCode}`);
+
+                    console.log(
+                        Object.keys(res2.data)
+                    );
+
+                    if (hasProp(res2.data, "stylizedImage")) {
+                        console.log("We received a Stylized image, YAHOUUU.");
+
+                        r.message = "received file ok: " + res2.statusCode;
+                        r.status = 1;
+                    } else {
+                        console.log();
+
+                        try {
+
+                            var jsonContentResponse2 = JSON.stringify(res2.body);
+                            fs.writeFile('err.txt', jsonContentResponse2, function (err) {
+                                if (err) return console.log(err);
+                                console.log('err.txt saved');
+                            });
+                        } catch (error) {
+                            console.log("error writing error file, not getting better ;(");
+                            console.log(error);
+                        }
+
+
+                        console.log("Something did not work, above might help");
+
+                        r.message = "NOT received file ok";
+                        r.status = -1;
+                    }
+
+                    // console.log(res2)`;`
+                }).catch((error) => {
+                    console.error(error);
+                })
+                ;
+
+        }
+
+
+
+        res.end(JSON.stringify(r));
+
     });
 
 });
+
+
+
+
+
+
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.post("/upload", function (req, res, next) {
     console.log("Receiving data...");
 
@@ -55,14 +148,17 @@ app.post("/upload", function (req, res, next) {
     req.on("end", () => {
         console.log("end receiving");
         // console.log(body);
+
         var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
-
-
+        if (hasProp(contentJson, "contentImage")) {
+            console.log("Valid format received.");
+        }
         var r = new Object();
         r.message = "received file ok";
         r.status = 1;
         res.end(JSON.stringify(r));
     });
+
 
 });
 // app.post('/upload', upload.single('contentImage'), (req, res) => {
@@ -76,3 +172,19 @@ app.post("/upload", function (req, res, next) {
 app.listen(PORT, () => {
     console.log('Listening at http://127.0.0.1:' + PORT);
 });
+
+
+
+//------------UTIL------------
+
+/** tells if an object has a prop of that name
+ *
+ * @param {*} o
+ * @param {*} p
+ */
+function hasProp(o, p) {
+
+    if (o != null)
+        return o.hasOwnProperty(p);
+    else return false;
+}
