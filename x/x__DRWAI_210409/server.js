@@ -145,6 +145,95 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
 });
 
 
+app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
+
+    console.log("composer::Receiving data..."
+        + `//@STCGoal Transparently this stylize using another host service.
+            //@a This route is called to compose two inference. 
+    `);
+    
+    var r = new Object();
+    r.message = "Connected";
+    r.status = 0;
+    var portMap = 9002; //default style 1
+    var portMap2 = 9003; //default style 2
+
+    if (hasProp(req.params, "modelid")) {
+        var modelid = req.params.modelid;
+        portMap = mapModelIdToPort(modelid);
+        console.log("Using style1 port: " + portMap);
+    }
+    else console.log("Using default style1 port: " + portMap);
+
+    if (hasProp(req.params, "modelid2")) {
+        var modelid2 = req.params.modelid2;
+        portMap2 = mapModelIdToPort(modelid2);
+        console.log("Using style2 port: " + portMap2);
+    }
+    else console.log("Using default style2 port: " + portMap2);
+
+    let body = "";
+
+    var c = 0;
+    req.on("data", chunk => {
+        console.log("Receiving chuck..." + c++);
+        body += chunk.toString(); // convert Buffer to string
+        // console.log(".");
+    });
+
+
+    // var contentImageAsStyle
+    req.on("end", () => {
+        console.log("Content image received :");
+        console.log("   Getting inference from stylization model servers");
+
+
+
+        var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
+        if (hasProp(contentJson, "contentImage")) {
+            console.log
+                ("Valid format received.");
+            console.log("Style server is being called : " + stylizeapiurl);
+
+            r.message = "Received a valid format";
+
+            getInferenceFromServer(body, portMap, r, function (r) {
+                //stuff on success
+
+
+                //@STCGoal Get another Inference from PortMap2
+                var req2 = new Object();
+                req2.contentImage = r.stylizedImage; // getting our result as input for the second pass
+                var body2 = JSON.stringify(req2);
+
+
+                getInferenceFromServer(body2, portMap2, r, function (r2) {
+                    //stuff on success
+
+                    res.end(JSON.stringify(r2));
+                },
+                    function (r2) {
+                        //stuff on error
+                        res.end(JSON.stringify(r2));
+
+                    }
+                );
+
+            },
+                function (r) {
+                    //stuff on error
+                    res.end(JSON.stringify(r));
+
+                }
+            );
+
+        }
+
+    });
+
+});
+
+
 app.post("/stylizerv2/:modelid?", function (req, res, next) {
 
     console.log("stylizerv2::Receiving data..."
