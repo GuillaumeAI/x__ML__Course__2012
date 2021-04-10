@@ -18,6 +18,7 @@ app.get("up", function (req, res, next) {
     console.log("Up tested");
 })
 app.use(express.static('public'));
+
 app.post("/stylize", function (req, res, next) {
     console.log("Receiving data..."
         + `//@STCGoal Transparently this stylize using another host service
@@ -126,7 +127,119 @@ app.post("/stylize", function (req, res, next) {
 
 
 
+// V1 Stylize
+
+
+app.post("/stylizeV1", function (req, res, next) {
+    console.log("stylizeV1::Receiving data..."
+        + `//@STCGoal Transparently this stylize using another host service
+    `);
+
+    let body = "";
+
+    var c = 0;
+    req.on("data", chunk => {
+        console.log("Receiving chuck..." + c++);
+        body += chunk.toString(); // convert Buffer to string
+        // console.log(".");
+    });
+
+
+    // var contentImageAsStyle
+    req.on("end", () => {
+        console.log("Content image received :");
+        console.log("   Getting inference from stylization model server");
+
+
+        var r = new Object();
+        r.message = "initialized";
+        r.status = 0;
+
+
+        var contentJson = JSON.parse(body); //grab the request body and parse it to a var as JSON
+        if (hasProp(contentJson, "contentImage")) {
+            console.log
+                ("Valid format received.");
+            console.log("Style server is being called : " + stylizeapiurl);
+
+            r.message = "Received a valid format";
+            axios
+                .post(
+                    stylizeapiurl,
+                    body
+                    // {
+                    //     contentImage: contentJson.contentImage
+                    // }
+                )
+                .then((res2) => {
+                    console.log(`statusCode: ${res2.statusCode}`);
+                    console.log(
+                        Object.keys(res2)
+                    );
+                    console.log(
+                        Object.keys(res2.data)
+                    );
+
+
+                    if (debug) {
+                        var jsonContentResponse2 = JSON.stringify(res2.data);
+                        fs.writeFile('err.txt', jsonContentResponse2, function (err) {
+                            if (err) return console.log(err);
+                            console.log('err.txt saved');
+                        });
+                    }
+                    if (hasProp(res2.data, "stylizedImage")) {
+                        r.stylizedImage = res2.data['stylizedImage'];
+                        console.log("We received a Stylized image, YAHOUUU.");
+
+                        r.message = "We received a Stylized image, YAHOUUU.";
+                        r.status = 1;
+
+                    } else {
+                        console.log();
+
+                        try {
+
+                        } catch (error) {
+                            console.log("error writing error file, not getting better ;(");
+                            console.log(error);
+                        }
+
+
+                        console.log("Something did not work, above might help");
+
+                        r.message = "NOT received file ok";
+                        r.status = -1;
+
+                    }
+
+                    res.end(JSON.stringify(r));
+                    // console.log(res2)`;`
+                }).catch((error) => {
+                    r.message = "there were errors";
+                    r.error = error;
+                    r.status = -2;
+                    res.end(JSON.stringify(r));
+                    console.error(error);
+                })
+                ;
+
+        }
+
+
+
+
+    });
+
+});
+
+
+
+
+
+
 //
+
 
 
 
