@@ -1,11 +1,13 @@
 'use strict';
 var debug = false;
 var verbose = 1;
-var composeResizeWidth = 800;
+var composeResizeWidth = 1280;
 var composeResizeQual = 90;
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
+const lastMulter = multer({ dest: __dirname + '/data/last' });
+const last =  __dirname + '/data/last';
 const axios = require('axios');
 const { request } = require('express');
 
@@ -43,7 +45,35 @@ function buildstylizeapiurl(port) {
 }
 
 
+app.get("/last/:svctag?", function (req, res, next) {
+    var svctag = "stylizer";
+    if (hasProp(req.params,"svctag"))
+    {
+        svctag = req.params.svctag;
+    }
+
+    //@STCGoal return the desired file of last result.
+
+    var fileToRead = getLastFullPath(svctag) ;
+    
+
+    let rawdata = fs.readFileSync(fileToRead);
+
+    res.end(rawdata);
+
+});
+
+function getLastFullPath(svctag)
+{
+    var p =  last + "/" + "last-" + svctag + ".json";
+    console.log("DEBUG:getLastFullPath(svctag)" + p);
+    return  p;
+      
+}
+
 app.post("/stylizer/:modelid?", function (req, res, next) {
+ 
+ 
     console.log("Receiving data..."
         + `//@STCGoal Transparently this stylize using another host service
     `);
@@ -140,7 +170,10 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                     }
 
                     r.contentImage = contentJson.contentImage;
-                    writeResultHTML(r, "result-stylizer-" + portMap + ".html");
+                    var htmlResultFile = "result-stylizer-" + portMap + ".html";
+                    writeResultHTML(r, htmlResultFile);    
+                    r.resulthtml= htmlResultFile;                
+                    saveLastResult(r,"stylizer");
                     res.end(JSON.stringify(r));
                     // console.log(res2)`;`
                 }).catch((error) => {
@@ -160,6 +193,11 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
     });
 
 });
+function saveLastResult(r,svctag)
+{
+    var filename =   getLastFullPath(svctag) ;
+    fs.writeFileSync(filename,JSON.stringify (r));    
+}
 
 var keepTrack = true;
 app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
@@ -238,6 +276,8 @@ app.post("/composer/:modelid?/:modelid2?", function (req, res, next) {
                             } catch (error) {
 
                             }
+
+                            saveLastResult(r,"compose");
 
                             res.end(JSON.stringify(r));
                         }).catch(r3 => {
@@ -326,23 +366,30 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
 
                     //@STCGoal Increase size of content image before posting it.
 
-                    var tmpContent = r2.stylizedImage;
-                    var tmpContentDecoded = decode_base64ToString(r2.stylizedImage);
-                    var tmpFilename = "_composetmp.jpg";
-                    var tmpFilename2 = "_composetmpResized.jpg";
+                   // var tmpContent = r2.stylizedImage;
+                    // var tmpContentDecoded = decode_base64ToString(r2.stylizedImage);
+                    // var tmpFilename = "_composetmp.jpg";
+                    // var tmpFilename2 = "_composetmpResized.jpg";
 
                     console.log("Processing the first style as input for a second iteration...");
                     //decode the file we will resize
-                    decode_base64(tmpContent, tmpFilename); //@Status OK
+                   // decode_base64(tmpContent, tmpFilename); //@Status OK
                    
                     console.log("Decoded...");
                     //@a Rezise
 
                     
 
+               
+                  
+                     var cleanString = cleanBase64String(r2.stylizedImage);
+                     fs.writeFileSync("_debug-cleanString" +  ".json",cleanString);
+                     decode_base64(cleanString, "_debug_cleanString.jpg");
                     // open a file called "lenna.png"
-                    Jimp.read(Buffer.from(cleanBase64String(r2.stylizedImage),'base64'), (err3, lenna) => {
-                        if (err3) throw (err3);
+                   // jimpBase64Reader(r2.stylizedImage)
+                    Jimp.read(getBase64BufferFrom(cleanString), 
+                    (err3, lenna) => {
+                        if (err3) console.log (err3);
 
                         console.log("Read by Jimp");
 
@@ -350,13 +397,16 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
                             .resize(composeResizeWidth, Jimp.AUTO) // resize
                             .quality(composeResizeQual) // set JPEG quality
                             .getBase64(Jimp.AUTO,(errL,resL) => {
+
                                   fs.writeFileSync("_debug-resizegetbase64_jimp" +  ".json",JSON.stringify (resL));
+                                  decode_base64(resL,"_debug_resizeByBase64.jpg");
                                   //@RESOLVING --USING Base64 as output
+ process.exit(0);
                             });
                          //   .write(tmpFilename2); //@STATUS Ok
 
 
-                        process.exit(0);
+                     
                         console.log("Resized");
                         
                         /* Image Manipulation Methods (Default Plugins)
@@ -412,6 +462,7 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
                                     var fname = "result-composerv2-" + portMap + "-" + portMap2 + ".html";
                                     console.log("----------Writting results: " + fname);
                                     writeResultHTML(r, fname);
+                                    saveLastResult(r,"composerv2");
 
                                 } catch (error) {
 
@@ -765,10 +816,22 @@ function getInferenceFromServer(body, portMap) {
 
 //------------UTIL------------
 
+function jimpBase64Reader(input){
+    if(input.indexOf('base64') != -1) {
+        return Jimp.read(Buffer.from(
+            cleanBase64String(input)
+            , 'base64')
+            );
+    } else {
+        // handle as Buffer, etc..
+        return Jimp.read(Buffer.from(input),'base64');
+    }
+}
 function cleanBase64String(s)
 {
     if(s.indexOf('base64') != -1) {
-        return s.replace(/^data:image\/png;base64,/, "");
+        return s.replace(/^data:image\/png;base64,/, "")
+            .replace(/^data:image\/jpeg;base64,/, "");
     } else {
         // handle as Buffer, etc..
         return s;
@@ -804,6 +867,11 @@ function decode_base64(base64str, filename) {
 
     fs.writeFileSync(filename, buf);
 
+}
+
+function getBase64BufferFrom(base64)
+{
+    return Buffer.from(base64,'base64');
 }
 
 /**
