@@ -19,7 +19,7 @@ var Jimp = require('jimp');
 
 
 
-var stylizelapihost = "http://127.0.0.1";
+var stylizelapihost = "http://192.168.2.132";
 var stylizelapiport = "9002";
 var stylizelapiport2 = "9003";
 var stylizelapiroute = "/stylize";
@@ -436,7 +436,7 @@ app.post("/composerv2/:modelid?/:modelid2?", function (req, res, next) {
                           var resizedNewStylizedContent =  
                             encode_base64_v3_to_JSONRequestFile(tmpFilename2,"_debug_tabarnak.json");
                           ;
-                          console.log(resizedNewStylizedContent);
+                        //  console.log(resizedNewStylizedContent);
    
                           
                        console.log("Recoded");
@@ -909,7 +909,7 @@ function encodeFile_to_base64ContentRequestFile_v3(filename, targetJsonFile) {
 //@STCIssue NOT WORKING, READS nothing in the file
  function encode_base64_v3o_to_JSONRequest(filename) {
     var base64Raw = fs.readFileSync(filename, 'base64');
-    console.log(base64Raw);
+   // console.log(base64Raw);
 
     var base64 = base64Raw;
     var ext = path.extname(filename).replace(".", "");
