@@ -114,14 +114,9 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
             console.log("Style server is being called : " + stylizeapiurl);
 
             r.message = "Received a valid format";
+            var callUrl = buildstylizeapiurl(portMap);
             axios
-                .post(
-                    buildstylizeapiurl(portMap),
-                    body
-                    // {
-                    //     contentImage: contentJson.contentImage
-                    // }
-                )
+                .post(callUrl , body ) //@a Post the Data
                 .then((res2) => {
                     if (verbose > 1) {
                         console.log(`statusCode: ${res2.statusCode}`);
@@ -149,21 +144,6 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                         r.status = 1;
 
                     } else {
-
-
-                        try {
-
-                        } catch (error) {
-
-                            console.log(error);
-                            console.log("error writing error file, not getting better ;(");
-                            console.log(
-                                Object.keys(error)
-                            );
-
-
-                        }
-
 
                         console.log("Something did not work, above might help");
 
