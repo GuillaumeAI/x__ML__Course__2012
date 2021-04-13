@@ -3,10 +3,13 @@ var debug = false;
 var verbose = 1;
 var composeResizeWidth = 1280;
 var composeResizeQual = 90;
+const PORT = 3000;
+
 const express = require('express');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
 const lastMulter = multer({ dest: __dirname + '/data/last' });
+const logDir = multer({ dest: __dirname + '/log' });
 const last =  __dirname + '/data/last';
 const axios = require('axios');
 const { request } = require('express');
@@ -19,7 +22,7 @@ var Jimp = require('jimp');
 
 
 
-var stylizelapihost = "http://192.168.2.132";
+var stylizelapihost = "http://gaia.guillaumeisabelle.com";
 var stylizelapiport = "9002";
 var stylizelapiport2 = "9003";
 var stylizelapiroute = "/stylize";
@@ -27,7 +30,6 @@ var styliZERlapiroute = "/stylizer";
 var stylizeapiurl = stylizelapihost + ":" + stylizelapiport + stylizelapiroute;
 
 const app = express();
-const PORT = 3000;
 app.get("up", function (req, res, next) {
     console.log("Up tested");
 })
@@ -152,6 +154,7 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
                         try {
 
                         } catch (error) {
+
                             console.log(error);
                             console.log("error writing error file, not getting better ;(");
                             console.log(
@@ -1059,4 +1062,11 @@ function writeResultHTML(r, filename) {
 
     fs.writeFileSync(filename, s);
 
+}
+
+var errorFile = "log/error.txt";
+function logError(error,consoleErrorMessage="An error was logged")
+{
+    console.log(consoleErrorMessage", see :" + errorFile);
+    fs.writeFileSync(errorFile,error);
 }
