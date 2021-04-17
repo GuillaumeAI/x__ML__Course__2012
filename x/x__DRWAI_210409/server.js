@@ -1059,7 +1059,7 @@ function writeResultHTML(r, filename) {
 
 var errorFile = "log/error.txt";
 function logError(error, consoleErrorMessage = "An error was logged") {
-    console.log(consoleErrorMessage", see :" + errorFile);
+    console.log(consoleErrorMessage + ", see :" + errorFile);
     fs.writeFileSync(errorFile, error);
 }
 
