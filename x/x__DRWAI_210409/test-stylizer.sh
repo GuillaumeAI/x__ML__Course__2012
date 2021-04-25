@@ -6,8 +6,9 @@ export callurlbase="http://127.0.0.1:3000"
 export callurl="$callurlbase/stylizer/$1"
 echo "Calling $callurl"
 #curl --header  "$callContentType"  --request POST   --data @$requestFile $callurl --output $responseFile
-file=request-test.json
-responseFile=response-test-stylizer.json
+databasedir=./tests
+file=$databasedir/request-test.json
+responseFile=$databasedir/response-test-stylizer.json
 #curl "$callurlbase/up"
 
 
