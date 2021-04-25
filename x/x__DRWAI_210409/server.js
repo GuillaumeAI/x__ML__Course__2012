@@ -10,6 +10,8 @@ const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
 const lastMulter = multer({ dest: __dirname + '/data/last' });
 const logDir = multer({ dest: __dirname + '/log' });
+const htmlBaseDir = __dirname + '/html';
+const htmlResultDir = multer({ dest: htmlBaseDir });
 const last = __dirname + '/data/last';
 const axios = require('axios');
 const { request } = require('express');
@@ -22,7 +24,7 @@ var Jimp = require('jimp');
 
 
 
-var stylizelapihost = "http://gaia.guillaumeisabelle.com";
+var stylizelapihost = "http://orko.guillaumeisabelle.com";
 var stylizelapiport = "9002";
 var stylizelapiport2 = "9003";
 var stylizelapiroute = "/stylize";
@@ -129,7 +131,7 @@ app.post("/stylizer/:modelid?", function (req, res, next) {
 
                     if (debug) {
                         var jsonContentResponse2 = JSON.stringify(res2.data);
-                        fs.writeFile('err.txt', jsonContentResponse2, function (err) {
+                        writeError('err.txt', jsonContentResponse2, function (err) {
                             if (err) return console.log(err);
                             console.log('err.txt saved');
                         });
@@ -1053,7 +1055,7 @@ function writeResultHTML(r, filename) {
     </tr>
     `;
 
-    fs.writeFileSync(filename, s);
+    fs.writeFileSync(htmlBaseDir + "/" +filename, s);
 
 }
 
@@ -1077,4 +1079,17 @@ function exitApp(r, res, reason) {
     r.message = "App exited:" + reason;
     res.end(JSON.stringify(r));
     process.exit(0);
+}
+
+
+function writeError(errFileName,content,callback)
+{
+    var outfile =__dirname + "/" + errFileName;
+    fs.writeFile(outfile, content, function (err) {
+        if (err) 
+        {
+            callback(err);
+        }
+        console.log(outfile +' saved');
+    });
 }
