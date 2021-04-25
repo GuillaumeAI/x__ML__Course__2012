@@ -44,7 +44,7 @@ function mapModelIdToPort(modelid) {
 function buildstylizeapiurl(port) {
     var r =
         stylizelapihost + ":" + port + stylizelapiroute;
-    console.log("Built API Call URL: " + r);
+    if (debug) console.log("Built API Call URL: " + r);
     return r;
 }
 
@@ -68,7 +68,7 @@ app.get("/last/:svctag?", function (req, res, next) {
 
 function getLastFullPath(svctag) {
     var p = last + "/" + "last-" + svctag + ".json";
-    console.log("DEBUG:getLastFullPath(svctag)" + p);
+    if (debug) console.log("DEBUG:getLastFullPath(svctag)" + p);
     return p;
 
 }
